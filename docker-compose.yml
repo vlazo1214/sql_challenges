@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:15
+    container_name: retail_container
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: retail_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      # Host side stays configurable via DB_PORT; Postgres itself always
+      # listens on 5432 inside its own container.
+      - "${DB_PORT}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d retail_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # web-based explorer to monitor db
+  db_explorer:
+    image: dpage/pgadmin4
+    container_name: pgadmin_explorer
+    environment:
+      # credentials when logging into dashboard
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "8001:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+
+volumes:
+  pgdata:
+  pgadmin_data:
